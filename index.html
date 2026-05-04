@@ -121,15 +121,8 @@
       font-size: 14px;
     }
 
-    .negative {
-      color: #e53935;
-      font-weight: 800;
-    }
-
-    .positive {
-      color: #2e7d32;
-      font-weight: 800;
-    }
+    .negative { color: #e53935; font-weight: 800; }
+    .positive { color: #2e7d32; font-weight: 800; }
 
     table {
       width: 100%;
@@ -152,18 +145,12 @@
       text-align: center;
     }
 
-    tr:hover {
-      background: #f8fbff;
-    }
+    tr:hover { background: #f8fbff; }
 
-    canvas {
-      max-height: 260px;
-    }
+    canvas { max-height: 260px; }
 
     @media (max-width: 768px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
+      .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -190,18 +177,15 @@
 
     <div class="card">
       <h3>新增記帳</h3>
-
       <input type="date" id="date">
       <select id="category">
         <option value="lunch">公司午餐</option>
         <option value="misc">雜項</option>
         <option value="food">外食</option>
       </select>
-
       <input type="text" id="item" placeholder="項目">
       <input type="number" id="amount" placeholder="金額">
       <input type="text" id="note" placeholder="備註">
-
       <button onclick="addRecord()">新增</button>
 
       <div class="btn-row">
@@ -244,42 +228,53 @@
   </div>
 </div>
 
-<!-- ⚠️ 你的 JS 完全沒動（原封不動保留） -->
 <script>
 
-let records = JSON.parse(localStorage.getItem("records")) || [];
-let limits = JSON.parse(localStorage.getItem("limits")) || {
-  lunch: 0, misc: 0, food: 0
-};
+// ✅ DOM 修正（GitHub Pages 必要）
+const monthPicker = document.getElementById("monthPicker");
+const limitLunch = document.getElementById("limitLunch");
+const limitMisc = document.getElementById("limitMisc");
+const limitFood = document.getElementById("limitFood");
+const date = document.getElementById("date");
+const category = document.getElementById("category");
+const item = document.getElementById("item");
+const amount = document.getElementById("amount");
+const note = document.getElementById("note");
+const list = document.getElementById("list");
+const totalLunch = document.getElementById("totalLunch");
+const totalMisc = document.getElementById("totalMisc");
+const totalFood = document.getElementById("totalFood");
+const pieChart = document.getElementById("pieChart");
 
-let currentMonth = new Date().toISOString().slice(0, 7);
+let records = JSON.parse(localStorage.getItem("records")) || [];
+let limits = JSON.parse(localStorage.getItem("limits")) || { lunch:0, misc:0, food:0 };
+
+let currentMonth = new Date().toISOString().slice(0,7);
 let chart;
 
 monthPicker.value = currentMonth;
-
 monthPicker.addEventListener("change", e => {
   currentMonth = e.target.value;
   render();
 });
 
-function save() {
-  localStorage.setItem("records", JSON.stringify(records));
-}
+function save(){ localStorage.setItem("records", JSON.stringify(records)); }
 
-function saveLimits() {
+function saveLimits(){
   limits = {
-    lunch: Number(limitLunch.value) || 0,
-    misc: Number(limitMisc.value) || 0,
-    food: Number(limitFood.value) || 0
+    lunch: Number(limitLunch.value)||0,
+    misc: Number(limitMisc.value)||0,
+    food: Number(limitFood.value)||0
   };
   localStorage.setItem("limits", JSON.stringify(limits));
   render();
 }
 
-function addRecord() {
-  if (!date.value || !item.value || !amount.value) return alert("填完整");
+function addRecord(){
+  if(!date.value||!item.value||!amount.value) return alert("填完整");
 
   records.push({
+    id: Date.now(),
     date: date.value,
     category: category.value,
     item: item.value,
@@ -287,134 +282,88 @@ function addRecord() {
     note: note.value
   });
 
-  save();
-  render();
+  save(); render();
 }
 
-function deleteRecord(i) {
-  records.splice(i, 1);
-  save();
-  render();
+function deleteRecord(id){
+  records = records.filter(r => r.id !== id);
+  save(); render();
 }
 
-function getName(c) {
-  return c === "lunch" ? "午餐"
-       : c === "misc" ? "雜項"
-       : "外食";
+function getName(c){
+  return c==="lunch"?"午餐":c==="misc"?"雜項":"外食";
 }
 
-function exportCSV() {
-  let csv = "日期,分類,項目,金額,備註\n";
-
-  records.forEach(r => {
-    csv += `${r.date},${r.category},${r.item},${r.amount},${r.note || ""}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "記帳資料.csv";
-  a.click();
-
+function exportCSV(){
+  let csv="日期,分類,項目,金額,備註\n";
+  records.forEach(r=>csv+=`${r.date},${r.category},${r.item},${r.amount},${r.note||""}\n`);
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="記帳.csv";a.click();
   URL.revokeObjectURL(url);
 }
 
-function importCSV(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = function (evt) {
-    const lines = evt.target.result.trim().split("\n");
-    const newData = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const [date, category, item, amount, note] = lines[i].split(",");
-
-      if (!date) continue;
-
-      newData.push({
-        date: date.trim(),
-        category: category.trim(),
-        item: item || "",
-        amount: Number(amount) || 0,
-        note: note || ""
-      });
+function importCSV(e){
+  const file=e.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(evt){
+    const lines=evt.target.result.trim().split("\n");
+    const newData=[];
+    for(let i=1;i<lines.length;i++){
+      const [date,category,item,amount,note]=lines[i].split(",");
+      newData.push({id:Date.now()+i,date,category,item,amount:Number(amount),note});
     }
-
-    records = [...records, ...newData];
-    save();
-    render();
-    alert("匯入完成！");
+    records=[...records,...newData]; save(); render();
   };
-
   reader.readAsText(file);
 }
 
-function setColor(el, val) {
-  el.innerText = val;
-  el.className = val < 0 ? "negative" : "positive";
+function setColor(el,val){
+  el.innerText=val;
+  el.className=val<0?"negative":"positive";
 }
 
-function updateChart(l, m, f) {
-  if (!chart) {
-    chart = new Chart(pieChart, {
-      type: "pie",
-      data: {
-        labels: ["午餐", "雜項", "外食"],
-        datasets: [{
-          data: [l, m, f],
-          backgroundColor: ["#4A90E2", "#E91E63", "#4CAF50"]
-        }]
-      }
-    });
-  } else {
-    chart.data.datasets[0].data = [l, m, f];
-    chart.update();
+function updateChart(l,m,f){
+  if(!chart){
+    chart=new Chart(pieChart,{type:"pie",data:{labels:["午餐","雜項","外食"],datasets:[{data:[l,m,f]}]}});
+  }else{
+    chart.data.datasets[0].data=[l,m,f]; chart.update();
   }
 }
 
-function render() {
-  list.innerHTML = "";
+function render(){
+  list.innerHTML="";
+  let l=0,m=0,f=0;
 
-  let l = 0, m = 0, f = 0;
+  records.filter(r=>r.date.startsWith(currentMonth)).forEach(r=>{
+    if(r.category=="lunch")l+=r.amount;
+    if(r.category=="misc")m+=r.amount;
+    if(r.category=="food")f+=r.amount;
 
-  const filtered = records
-    .map((r, i) => ({ ...r, _i: i }))
-    .filter(r => r.date.startsWith(currentMonth));
-
-  filtered.forEach(r => {
-    if (r.category === "lunch") l += r.amount;
-    if (r.category === "misc") m += r.amount;
-    if (r.category === "food") f += r.amount;
-
-    list.innerHTML += `
+    list.innerHTML+=`
       <tr>
         <td>${r.date}</td>
         <td>${getName(r.category)}</td>
         <td>${r.item}</td>
         <td>${r.amount}</td>
-        <td>${r.note || ""}</td>
-        <td><button onclick="deleteRecord(${r._i})">🗑️</button></td>
-      </tr>
-    `;
+        <td>${r.note||""}</td>
+        <td><button onclick="deleteRecord(${r.id})">🗑️</button></td>
+      </tr>`;
   });
 
-  setColor(totalLunch, limits.lunch - l);
-  setColor(totalMisc, limits.misc - m);
-  setColor(totalFood, limits.food - f);
+  setColor(totalLunch,limits.lunch-l);
+  setColor(totalMisc,limits.misc-m);
+  setColor(totalFood,limits.food-f);
 
-  updateChart(l, m, f);
+  updateChart(l,m,f);
 
-  limitLunch.value = limits.lunch;
-  limitMisc.value = limits.misc;
-  limitFood.value = limits.food;
+  limitLunch.value=limits.lunch;
+  limitMisc.value=limits.misc;
+  limitFood.value=limits.food;
 }
 
-date.valueAsDate = new Date();
+date.valueAsDate=new Date();
 render();
 
 </script>

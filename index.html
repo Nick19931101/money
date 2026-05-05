@@ -291,18 +291,18 @@ function addRecord(){
 }
 
 function deleteRecord(id){
+  // 本地刪除
   records = records.filter(r => r.id !== id);
   save();
 
-  cloudRef.once("value", snap => {
-    snap.forEach(child => {
-      if(child.val().id === id){
-        db.ref("records/" + child.key).remove();
-      }
-    });
-  });
+  // ☁️ Firebase 刪除（確保型別一致）
+  cloudRef.child(String(id)).remove();
 
   render();
+}
+
+// 🔥 強制掛到 window（解決 onclick 無法觸發問題）
+window.deleteRecord = deleteRecord;
 }
 
 function getName(c){

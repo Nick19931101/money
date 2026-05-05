@@ -40,9 +40,35 @@
       border-radius: 18px;
       box-shadow: 0 12px 30px rgba(0,0,0,0.08);
       transition: 0.25s ease;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.12);
     }
 
     .full { grid-column: 1 / -1; }
+
+    h3 {
+      margin-top: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: #444;
+      position: relative;
+      padding-left: 10px;
+    }
+
+    h3::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 2px;
+      width: 4px;
+      height: 16px;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #4CAF50, #2e7d32);
+    }
 
     input, select {
       width: 100%;
@@ -75,11 +101,8 @@
       font-size: 14px;
     }
 
-    th, td {
-      padding: 10px;
-      text-align: center;
-      border-bottom: 1px solid #eee;
-    }
+    th { background: #f5f7fb; padding: 10px; }
+    td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
   </style>
 </head>
 
@@ -105,19 +128,15 @@
 
     <div class="card">
       <h3>新增記帳</h3>
-
       <input type="date" id="date">
       <select id="category">
         <option value="lunch">公司午餐</option>
         <option value="misc">雜項</option>
         <option value="food">外食</option>
       </select>
-
-      <!-- ✅ 已幫你加 placeholder -->
-      <input type="text" id="item" placeholder="項目">
-      <input type="number" id="amount" placeholder="金額">
-      <input type="text" id="note" placeholder="備註">
-
+      <input type="text" id="item">
+      <input type="number" id="amount">
+      <input type="text" id="note">
       <button onclick="addRecord()">新增</button>
 
       <div class="btn-row">
@@ -150,6 +169,7 @@
 
 <script>
 
+// Firebase
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -172,6 +192,7 @@ const category = document.getElementById("category");
 const item = document.getElementById("item");
 const amount = document.getElementById("amount");
 const note = document.getElementById("note");
+
 const list = document.getElementById("list");
 
 monthPicker.value = currentMonth;
@@ -204,7 +225,9 @@ function addRecord(){
 
   records.push(data);
   save();
+
   cloudRef.child(String(data.id)).set(data);
+
   render();
 }
 
@@ -223,6 +246,7 @@ function getName(c){
 
 function render(){
   list.innerHTML="";
+
   let l=0,m=0,f=0;
 
   records.filter(r=>r.date?.startsWith(currentMonth)).forEach(r=>{

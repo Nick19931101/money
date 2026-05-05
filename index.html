@@ -161,9 +161,9 @@
         <option value="misc">雜項</option>
         <option value="food">外食</option>
       </select>
-      <input type="text" id="item" placeholder="項目">
-      <input type="number" id="amount" placeholder="金額">
-      <input type="text" id="note" placeholder="備註">
+      <input type="text" id="item">
+      <input type="number" id="amount">
+      <input type="text" id="note">
       <button onclick="addRecord()">新增</button>
 
       <div class="btn-row">
@@ -336,6 +336,21 @@ function render(){
 
 date.valueAsDate=new Date();
 render();
+
+// =============================
+// 🔥 SYNC PATCH（不改原本程式，強制全同步）
+// =============================
+
+// ❗ 禁止 push 造成分裂（改寫但不動原碼）
+cloudRef.push = function(data){
+  return cloudRef.child(String(data.id)).set(data);
+};
+
+// ❗ 強制刪除同步
+const _deleteRecord = deleteRecord;
+deleteRecord = function(id){
+  cloudRef.child(String(id)).remove();
+};
 
 </script>
 

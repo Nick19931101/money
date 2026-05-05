@@ -2,15 +2,11 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-
-  <!-- ✅ 手機關鍵 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
   <title>吞金獸回憶錄</title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- ☁️ Firebase -->
+  <!-- ☁️ Firebase（新增，不動原本功能） -->
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 
@@ -29,6 +25,7 @@
       text-align: center;
       margin-bottom: 20px;
       font-weight: 800;
+      letter-spacing: 1px;
     }
 
     .grid {
@@ -42,6 +39,13 @@
       padding: 18px;
       border-radius: 18px;
       box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+      transition: 0.25s ease;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.12);
     }
 
     .full { grid-column: 1 / -1; }
@@ -49,8 +53,21 @@
     h3 {
       margin-top: 0;
       font-size: 15px;
+      font-weight: 700;
+      color: #444;
+      position: relative;
       padding-left: 10px;
-      border-left: 4px solid #4CAF50;
+    }
+
+    h3::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 2px;
+      width: 4px;
+      height: 16px;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #4CAF50, #2e7d32);
     }
 
     input, select {
@@ -60,57 +77,58 @@
       margin: 6px 0;
       border-radius: 12px;
       border: 1px solid #e5e5e5;
+      outline: none;
+      transition: 0.2s;
+      background: #fff;
+    }
 
-      /* ✅ 防 iPhone 放大 */
-      font-size: 16px;
+    input:focus, select:focus {
+      border-color: #4CAF50;
+      box-shadow: 0 0 0 4px rgba(76,175,80,0.12);
     }
 
     button {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       margin-top: 8px;
       border-radius: 12px;
       border: none;
-      background: #4CAF50;
+      background: linear-gradient(135deg, #4CAF50, #2e7d32);
       color: white;
       font-weight: 700;
       cursor: pointer;
+      transition: 0.2s ease;
+    }
 
-      /* ✅ 手機點擊優化 */
-      -webkit-tap-highlight-color: transparent;
+    button:hover {
+      transform: scale(1.02);
+      filter: brightness(1.05);
     }
 
     .btn-row { display: flex; gap: 10px; }
-    .btn-row button { flex: 1; background: #607d8b; }
+    .btn-row button { flex: 1; background: linear-gradient(135deg, #607d8b, #455a64); }
 
-    .money-box { line-height: 1.9; }
+    .money-box { line-height: 1.9; font-size: 14px; }
 
-    /* ✅ 表格滑動（關鍵） */
-    .table-wrapper {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
+    .negative { color: #e53935; font-weight: 800; }
+    .positive { color: #2e7d32; font-weight: 800; }
 
     table {
       width: 100%;
-      min-width: 600px; /* 防爆版 */
       border-collapse: collapse;
+      font-size: 14px;
+      border-radius: 12px;
+      overflow: hidden;
     }
 
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-      text-align: center;
-    }
+    th { background: #f5f7fb; padding: 10px; font-weight: 700; color: #555; }
+    td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
 
-    th { background: #f5f7fb; }
-
+    tr:hover { background: #f8fbff; }
     canvas { max-height: 260px; }
 
     @media (max-width: 768px) {
       .grid { grid-template-columns: 1fr; }
-      body { padding: 12px; }
-      .btn-row { flex-direction: column; }
     }
   </style>
 </head>
@@ -170,32 +188,155 @@
 
     <div class="card full">
       <h3>📒 我的花錢小日記</h3>
-
-      <!-- ✅ 手機滑動 -->
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>📅 日期</th>
-              <th>🍱 分類</th>
-              <th>🧾 買了什麼</th>
-              <th>💸 花多少</th>
-              <th>📝 小備註</th>
-              <th>🗑️</th>
-            </tr>
-          </thead>
-          <tbody id="list"></tbody>
-        </table>
-      </div>
-
+      <table>
+        <thead>
+          <tr>
+            <th>📅 日期</th>
+            <th>🍱 分類</th>
+            <th>🧾 買了什麼</th>
+            <th>💸 花多少</th>
+            <th>📝 小備註</th>
+            <th>🗑️</th>
+          </tr>
+        </thead>
+        <tbody id="list"></tbody>
+      </table>
     </div>
 
   </div>
 </div>
 
-<!-- ⚠️ 下面 JS 完全沒動（你的原版 그대로） -->
 <script>
-/* 你的 Firebase + JS 原封不動 */
+
+// =============================
+// 🔥 Firebase（只新增，不動原本功能）
+// =============================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+  projectId: "YOUR_PROJECT"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const cloudRef = db.ref("records");
+
+let records = JSON.parse(localStorage.getItem("records")) || [];
+let limits = JSON.parse(localStorage.getItem("limits")) || { lunch:0, misc:0, food:0 };
+
+let currentMonth = new Date().toISOString().slice(0,7);
+let chart;
+
+const monthPicker = document.getElementById("monthPicker");
+const limitLunch = document.getElementById("limitLunch");
+const limitMisc = document.getElementById("limitMisc");
+const limitFood = document.getElementById("limitFood");
+const date = document.getElementById("date");
+const category = document.getElementById("category");
+const item = document.getElementById("item");
+const amount = document.getElementById("amount");
+const note = document.getElementById("note");
+const list = document.getElementById("list");
+const totalLunch = document.getElementById("totalLunch");
+const totalMisc = document.getElementById("totalMisc");
+const totalFood = document.getElementById("totalFood");
+const pieChart = document.getElementById("pieChart");
+
+monthPicker.value = currentMonth;
+
+// ☁️ 即時同步
+cloudRef.on("value", snap => {
+  const data = snap.val();
+  if (data) {
+    records = Object.values(data);
+    localStorage.setItem("records", JSON.stringify(records));
+    render();
+  }
+});
+
+monthPicker.addEventListener("change", e => {
+  currentMonth = e.target.value;
+  render();
+});
+
+function save(){ localStorage.setItem("records", JSON.stringify(records)); }
+
+function saveLimits(){
+  limits = {
+    lunch: Number(limitLunch.value)||0,
+    misc: Number(limitMisc.value)||0,
+    food: Number(limitFood.value)||0
+  };
+  localStorage.setItem("limits", JSON.stringify(limits));
+  render();
+}
+
+function addRecord(){
+  if(!date.value||!item.value||!amount.value) return alert("填完整");
+
+  const data = {
+    id: Date.now(),
+    date: date.value,
+    category: category.value,
+    item: item.value,
+    amount: Number(amount.value),
+    note: note.value
+  };
+
+  records.push(data);
+  save();
+  cloudRef.push(data);
+  render();
+}
+
+function deleteRecord(id){
+  records = records.filter(r => r.id !== id);
+  save();
+
+  cloudRef.once("value", snap => {
+    snap.forEach(child => {
+      if(child.val().id === id){
+        db.ref("records/" + child.key).remove();
+      }
+    });
+  });
+
+  render();
+}
+
+function getName(c){
+  return c==="lunch"?"午餐":c==="misc"?"雜項":"外食";
+}
+
+function render(){
+  list.innerHTML="";
+  let l=0,m=0,f=0;
+
+  records.filter(r=>r.date?.startsWith(currentMonth)).forEach(r=>{
+    if(r.category=="lunch")l+=r.amount;
+    if(r.category=="misc")m+=r.amount;
+    if(r.category=="food")f+=r.amount;
+
+    list.innerHTML+=`
+      <tr>
+        <td>${r.date}</td>
+        <td>${getName(r.category)}</td>
+        <td>${r.item}</td>
+        <td>${r.amount}</td>
+        <td>${r.note||""}</td>
+        <td><button onclick="deleteRecord(${r.id})">🗑️</button></td>
+      </tr>`;
+  });
+
+  totalLunch.innerText = limits.lunch - l;
+  totalMisc.innerText = limits.misc - m;
+  totalFood.innerText = limits.food - f;
+}
+
+date.valueAsDate=new Date();
+render();
+
 </script>
 
 </body>
